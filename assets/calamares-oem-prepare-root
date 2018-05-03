@@ -1,0 +1,85 @@
+#!/bin/sh
+#
+# Copyright 2018 Harald Sitter <sitter@kde.org>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 3 of
+# the License or any later version accepted by the membership of
+# KDE e.V. (or its successor approved by the membership of KDE
+# e.V.), which shall act as a proxy defined in Section 14 of
+# version 3 of the license.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+set -ex
+
+cd `dirname "$(realpath $0)"`
+
+# TODO: drop this
+# we pull it in so it installs the /usr/bin/calamares hack that forces plasma
+# theming. we then overwrite the etc/ assets though...
+rm -rf /etc/calamares
+rm -f /usr/bin/_neon.calamares
+DEBIAN_FRONTEND=noninteractive apt install -y calamares-settings
+
+# Set pretty much all restrictions possible.
+cat << EOT >>/etc/xdg/kdeglobals
+[KDE Action Restrictions][\$i]
+action/lock_screen=false
+#logout=false
+#run_command=false
+#shell_access=false
+action/start_new_session=false
+action/switch_user=false
+plasma/allow_configure_when_locked=false
+plasma/containment_actions=false
+plasma/plasmashell/unlockedDesktop=false
+plasma-desktop/scripting_console=false
+plasma-desktop/add_activities=false
+action/kdesktop_rmb=false
+action/configdesktop=false
+action/kwin_rmb=true
+EOT
+
+# Make sure autologin and relogin on logout is enabled so we always get back
+# into the session.
+kwriteconfig5 --file /etc/sddm.conf --group Autologin --key Relogin --type bool true
+kwriteconfig5 --file /etc/sddm.conf --group Autologin --key User oem
+kwriteconfig5 --file /etc/sddm.conf --group Autologin --key Session plasma.desktop
+
+cp -a oem-cleanup /usr/bin/
+cp -a oem-cleanup.service /lib/systemd/system
+/bin/systemctl enable oem-cleanup.service
+
+cp -a /lib/systemd/system/sddm.service /lib/systemd/system/calamares-sddm.service
+/bin/systemctl enable calamares-sddm.service
+
+### from oem-config
+# Machine-specific, so remove in case this system is going to be
+# cloned.  These will be regenerated on the first boot.
+rm -f /etc/udev/rules.d/70-persistent-cd.rules \
+      /etc/udev/rules.d/70-persistent-net.rules
+
+rm -f /etc/NetworkManager/system-connections/*
+
+# Potentially sensitive.
+rm -f /home/oem/.ssh/known_hosts
+
+cp -a oem-config.service /lib/systemd/system
+cp -a oem-config.target /lib/systemd/system
+/bin/systemctl enable oem-config.service
+/bin/systemctl enable oem-config.target
+/bin/systemctl set-default oem-config.target
+### end from oem-config
+
+cd ../prepare
+cp -rv etc/. /etc
+
+echo 'oem ALL = (root) NOPASSWD: /usr/bin/calamares' >> /etc/sudoers.d/10-oem-config

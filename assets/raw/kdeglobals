@@ -1,0 +1,12 @@
+[KDE Action Restrictions][$i]
+action/lock_screen=false
+logout=false
+#run_command=false
+#shell_access=false
+action/start_new_session=false
+action/switch_user=false
+# plasma/allow_configure_when_locked=false
+# plasma/containment_actions=false
+# plasma/plasmashell/unlockedDesktop=false
+# plasma-desktop/scripting_console=false
+# plasma-desktop/add_activities=false

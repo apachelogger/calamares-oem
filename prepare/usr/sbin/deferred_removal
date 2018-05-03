@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -x
+set -e
+
+/usr/bin/qdbus --system org.freedesktop.Accounts /org/freedesktop/Accounts org.freedesktop.Accounts.DeleteUser 1000 true
+/usr/bin/pkcon -y remove calamares calamares-settings-pinebook
+/sbin/resize2fs /dev/mmcblk0p1

@@ -1,0 +1,16 @@
+[1]
+Description=Einstellungen für calamares
+clientmachine=localhost
+clientmachinematch=0
+closeable=false
+closeablerule=2
+placement=Centered
+placementrule=2
+title=KDE neon Installationsprogramm
+titlematch=0
+wmclass=calamares
+wmclasscomplete=false
+wmclassmatch=1
+
+[General]
+count=1

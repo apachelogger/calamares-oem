@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -e
+
+ROOT='/dev/mmcblk0'
+parted --script ${ROOT} p
+parted --script ${ROOT} rm 1
+parted --script ${ROOT} "mkpart primary ext4 40960s -1s"
+parted --script ${ROOT} p
+partprobe ${ROOT}
+resize2fs ${ROOT}p1

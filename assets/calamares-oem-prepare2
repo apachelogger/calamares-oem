@@ -1,0 +1,32 @@
+#!/bin/sh
+
+set -ex
+
+MSG="This will finalize the system preparation and prepare for shipping. This cannot be undone. The system will automatically power off once preparations are complete. Are you sure you want to do this?"
+
+if ! kdialog --yesno "$MSG"; then
+  exit 1
+fi
+
+# Make sure autologin and relogin on logout is enabled so we always get back
+# into the session.
+pkexec `pwd`/calamares-oem-prepare-root
+
+mkdir -p ~/.config/autostart
+cp /usr/share/applications/calamares.desktop ~/.config/autostart
+
+# Disable autolock or ksmserver will crash because lock_screen is disabled.
+# TODO file bug
+kwriteconfig5 --file kscreenlockerrc --group Daemon --key Autolock false
+# Disable session restore so we get a semi-prestine session
+kwriteconfig5 --file ksmserverrc --group General --key loginMode default
+# Force all windows to center.
+# Calamares specific window rules do not work for some reason (TODO investigate)
+# so instead we simply force everything to the center (which is mostly only cala anyway)
+kwriteconfig5 --file kwinrc --group Windows --key Placement Centered
+
+plasmapkg2 -t Plasma/LookAndFeel -r OEM || true
+plasmapkg2 -t Plasma/LookAndFeel -i OEM
+qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.loadLookAndFeelDefaultLayout OEM
+
+systemctl -i reboot
